@@ -23,13 +23,10 @@
   [mass]
   (adjust-fuel-mass (fuel-for-mass mass)))
 
-(defn- solution [f-name f]
-  (let [lines (read-input-lines f-name)]
+(defn- solution [f]
+  (let [lines (read-input-lines "input/one.txt")]
     (apply + (map (comp f #(Long/valueOf %))
                   lines))))
 
-(defn solution-a [f-name]
-  (solution f-name fuel-for-mass))
-
-(defn solution-b [f-name]
-  (solution f-name fuel-for-mass-1))
+(println (solution fuel-for-mass))
+(println (solution fuel-for-mass-1))
