@@ -8,7 +8,6 @@
        (map #(Integer. %))
        (vec)))
 
-
 (defn run-program [program]
   (loop [program program
          i 0]
