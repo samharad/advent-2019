@@ -3,45 +3,41 @@
 (def min-pass 109165)
 (def max-pass 576723)
 
-(defn digits
-  "Egregious!"
-  [n]
-  (->> n
-       (String/valueOf)
-       (seq)
-       (map #(Integer/valueOf (str %)))))
+(defn digits [n]
+  (letfn [(digits [n]
+            (if (= n 0)
+              []
+              (conj (digits (quot n 10))
+                    (rem n 10))))]
+    (if (= n 0)
+      [0]
+      (digits n))))
 
 (defn repetitions [xs]
   (partition-by identity xs))
 
-(defn has-repetition-satisfying? [xs pred]
+(defn some-repetition? [pred xs]
   (->> (repetitions xs)
        (some pred)))
 
-(defn has-2-peat [digs]
-  (has-repetition-satisfying? digs #(>= (count %) 2)))
-
-(defn has-exact-2-peat [digs]
-  (has-repetition-satisfying? digs #(= (count %) 2)))
-
-(defn num-pass-candidates [min max & ps]
-  (->> (range min (inc max))
+(defn num-pass-candidates [& ps]
+  (->> (range min-pass (inc max-pass))
        (map digits)
        (filter #(apply <= %))
        (filter (apply every-pred ps))
        (count)))
 
+(defn has-2-peat [xs]
+  (some-repetition? #(>= (count %) 2) xs))
+
+(defn has-exact-2-peat [xs]
+  (some-repetition? #(= (count %) 2) xs))
+
 (def solution-a
-  (num-pass-candidates
-    min-pass
-    max-pass
-    has-2-peat))
+  (time (num-pass-candidates has-2-peat)))
 
 (def solution-b
-  (num-pass-candidates
-    min-pass
-    max-pass
-    has-exact-2-peat))
+  (time (num-pass-candidates has-exact-2-peat)))
 
 (println solution-a)
 (println solution-b)
