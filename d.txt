@@ -1,0 +1,150 @@
+diff --git a/src/days/seven.clj b/src/days/seven.clj
+index 4de1e59..f36de37 100644
+--- a/src/days/seven.clj
++++ b/src/days/seven.clj
+@@ -4,6 +4,7 @@
+             [clojure.core.async :refer [chan go close! onto-chan <! <!! >! >!!]]))
+ 
+ (defn digits [n]
++  (assert (some? n))
+   (letfn [(digits [n]
+             (if (= n 0)
+               []
+@@ -49,28 +50,17 @@
+   (computation program i (take 2 param-modes) +))
+ 
+ (defn readln
+-  ([program i _]
+-   (let [c (chan)
+-         v (read-line)]
+-     (go (>! c v)
+-         (close! c))
+-     (readln c program i _)))
+   ([in-chan program i _]
+-   (println "In readln")
+    (computation program i [] #(let [v (<!! in-chan)]
++                                (assert (some? v))
+                                 (Integer. v)))))
+   ;(computation program i [] #(Integer. (read-line))))
+ 
+ (defn putln
+-  ([program i param-modes]
+-   (let [c (chan)]
+-     (go (println (<! c))
+-         (close! c))
+-     (putln c program i param-modes)))
+   ([out-chan program i param-modes]
+    (let [[x _] (get-args-and-return program i (take 1 param-modes))]
+-     ;(println "OUTPUT:" x)
+-     (>!! out-chan x)
++     (assert (some? x))
++     (assert (>!! out-chan x))
+      [program (+ i 2)])))
+ 
+ (defn jump-if-true [program i param-modes]
+@@ -112,7 +102,6 @@
+   ([program opcode-handler]
+    (loop [program program
+           i 0]
+-     (println i)
+      (let [instr (get program i)
+            digs (digits instr)
+            opcode (digits->num (take-last 2 digs))
+@@ -121,11 +110,13 @@
+            handler (opcode-handler opcode)]
+        (if (= opcode 99)
+          (get program 0)
+-         (let [[new-p new-i] (handler program i param-modes)]
+-           (recur new-p new-i)))))))
+-
+-(defn run-prog-with-io-strs [program in-str]
+-  (with-out-str (with-in-str in-str (run-program program))))
++         (do
++           (if (not (some #{opcode} (keys opcode-handler)))
++             (do
++               (println opcode)
++               (assert false)))
++           (let [[new-p new-i] (handler program i param-modes)]
++             (recur new-p new-i))))))))
+ 
+ (defn run-prog-with-chans [prog in-chan out-chan]
+   (let [handlers (-> opcode-handler
+@@ -137,11 +128,12 @@
+ 
+   (let [return-chan (chan)
+         run-chain (fn [phase-settings]
+-                      (let [start-chan (chan)
++                      (let [start-chan (chan 1)
+                             progs (reduce (fn [cs phase-setting]
+                                             (let [in (last cs)
+-                                                  out (chan)]
+-                                              (go (>! in phase-setting))
++                                                  out (chan 1)]
++                                              (assert (some? phase-setting))
++                                              (assert (>!! in phase-setting))
+                                               (go (run-prog-with-chans prog in out)
+                                                   (close! out))
+                                               (conj cs out)))
+@@ -149,31 +141,24 @@
+                                           phase-settings)]
+                         (go (let [last-out (last progs)
+                                   v (<! last-out)]
+-                              (println v)
+-                              (>! return-chan v)))
+-                        (go (>! start-chan 0))))]
++                              (close! start-chan)
++                              (assert (some? v))
++                              (assert (>! return-chan v))))
++                        (go (assert (>! start-chan 0)))))]
+     (apply max (map (fn [ps]
+                       (run-chain ps)
+                       (<!! return-chan))
+                     (combo/permutations phases)))))
+-                    ;(reduce-kv #(let [v (run-prog-with-io-strs prog (str %3 "\n" %1 "\n"))]
+-                    ;              (println "Computer number:" %2)
+-                    ;              (println v)
+-                    ;              v)
+-                    ;        0
+-                    ;        phase-settings))]
+-  ;(apply max (map #(Integer. (trim (run-chain %)))
+-  ;                (combo/permutations phases))))
+ 
+ (defn optimize-recursive-phase-settings [prog phases]
+-  (let [start-chan (chan)
+-        return-chan (chan)
++  (let [return-chan (chan)
+         run-chain (fn [phase-settings]
+-                    (let [progs (reduce (fn [cs phase]
++                    (let [start-chan (chan 1)
++                          progs (reduce (fn [cs phase]
+                                           (let [in (last cs)
+-                                                out (chan)]
+-                                            (go (>! in phase)
+-                                                (run-prog-with-chans prog in out)
++                                                out (chan 1)]
++                                            (assert (>!! in phase))
++                                            (go (run-prog-with-chans prog in out)
+                                                 (close! out))
+                                             (conj cs out)))
+                                         [start-chan]
+@@ -182,15 +167,16 @@
+                                 v (<! last-chan)]
+                             (println "v" v)
+                             (if-not (>! last-chan v)
+-                              (>! return-chan v)
+-                              (>! start-chan (<! last-chan)))))
++                              (assert (>! return-chan v))
++                              (assert (>! start-chan (<! last-chan))))))
+                       (go (>! start-chan 0))))]
+     (run-chain phases)
++    (println "aa")
+     (<!! return-chan)))
+     ;(go (println (str "RETURN VAL:" (<! return-chan))))))
+ 
+ 
+ ;(println "RESULT:" (optimize-phase-settings prog (range 5)))
+ 
+-(println "here")
+-(println "RESULT:" (optimize-recursive-phase-settings prog (range 5 10)))
++;(println "here")
++;(println "RESULT:" (optimize-recursive-phase-settings prog (range 5 10)))
