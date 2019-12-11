@@ -174,5 +174,5 @@
                 (assert (>! return-chan last-val)))))
           (go (>! start-chan 0)))))))
 
-(println "Soln A:" (optimize-phase-settings prog (range 5)))
-(println "Soln B:" (optimize-recursive-phase-settings prog (range 5 10)))
+;(println "Soln A:" (optimize-phase-settings prog (range 5)))
+;(println "Soln B:" (optimize-recursive-phase-settings prog (range 5 10)))
