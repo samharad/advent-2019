@@ -13,6 +13,7 @@
   ([mem in-chan] (make-prog mem in-chan nil))
   ([mem in-chan out-chan]
    (let [base-prog {:mem (vec (take 99999 (pad mem 0)))
+                    :state :ready
                     :pc 0
                     :r-base 0}]
      (?assoc base-prog
@@ -125,6 +126,9 @@
            oc (opcode instr)
            args (args prog)]
        (if (= oc 99)
-         (get mem 0)
+         (do
+           (some-> (:in-chan prog) (close!))
+           (some-> (:out-chan prog) (close!))
+           (assoc prog :state :terminated))
          (recur (exec prog args)))))))
 
