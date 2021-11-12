@@ -4,7 +4,7 @@
   (:import (java.util Comparator)))
 
 (defn add-vecs [& vs]
-  (vec (apply (partial map +) vs)))
+  (vec (apply map + vs)))
 
 (defn make-moon [coord velocity]
   {:coord coord
@@ -49,7 +49,7 @@
        (gravitated)
        (map move-moon)))
 
-(defn simulate [moons]
+(defn simulation [moons]
   (rest (iterate step moons)))
 
 (def COORDS [[19 -10 7]
@@ -62,9 +62,18 @@
            [2 -7 3]
            [9 -8 -3]])
 
+(defn coords->moons [coords]
+  (map #(make-moon % [0 0 0])
+       coords))
+
 (def MOONS (map #(make-moon % [0 0 0]) COORDS))
 
 (def SIMULATION (rest (iterate step MOONS)))
+
+(def TEST-2 [[-1 0 2]
+             [2 -10 -7]
+             [4 -8 8]
+             [3 5 1]])
 
 (def solution-a
   (->> SIMULATION
@@ -82,3 +91,11 @@
 
 (println "a" solution-a)
 ;(println "b" solution-b)
+
+
+(def xs (map first TEST-2))
+(def ys (map second TEST-2))
+(def zs (map last TEST-2))
+
+(def x-moons (map (comp coords->moons vec) xs))
+
